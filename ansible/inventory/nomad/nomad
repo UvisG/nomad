@@ -1,0 +1,17 @@
+[nomad]
+nomad-server01  ansible_host=10.8.36.28
+nomad-client01  ansible_host=10.8.36.29
+nomad-client02  ansible_host=10.8.36.53
+# nomad-client03  ansible_host=158.101.169.166
+
+[nomad_servers]
+nomad-server01
+
+
+[nomad_clients]
+nomad-client01
+nomad-client02
+# nomad-client03
+
+[docker_plugin]
+nomad-client01

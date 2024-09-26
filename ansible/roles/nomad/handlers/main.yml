@@ -1,0 +1,7 @@
+---
+- name: Restart nomad
+  become: true
+  systemd:
+    name: nomad
+    state: restarted
+    enabled: true

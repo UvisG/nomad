@@ -1,0 +1,168 @@
+job "ubuntu-vm" {
+  datacenters = ["dc1"]
+  type = "service"
+
+  group "vm" {
+    count = 1
+
+    task "qemu-vm" {
+      driver = "qemu"
+
+			config {
+        image_path  = "/var/lib/libvirt/images/ubuntu-server.qcow2" # Disk image for VM
+        accelerator = "kvm" # Enable KVM hardware acceleration
+
+        args = [
+          "-m", "2048",                             # Memory: 2GB
+          "-smp", "cpus=2",                         # CPU: 2 cores
+          "-drive", "file=/var/lib/libvirt/images/ubuntu-server.qcow2,format=qcow2", # Virtual hard disk
+          "-cdrom", "/tmp/ubuntu.iso",              # Boot ISO for Ubuntu
+          "-boot", "d",                             # Boot from CDROM
+          "-enable-kvm"                             # Enable KVM acceleration
+        ]
+      }
+
+      resources {
+        cpu    = 500   # CPU MHz
+        memory = 2048  # Memory in MB
+      }
+
+      artifact {
+        source      = "http://localhost:8080/ubuntu-20.04.6-live-server-amd64.iso"
+        destination = "/tmp/ubuntu.iso"
+      }
+    }
+  }
+}
+
+
+
+
+____________________________
+
+
+
+job "ubuntu-vm" {
+  datacenters = ["dc1"]
+  type = "service"
+
+  group "vm" {
+    count = 1
+
+    task "qemu-vm" {
+      driver = "qemu"
+
+      config {
+        image_path  = "/dev/libvirt_vg/ubuntu-vm" # Use the LVM logical volume as the disk
+        accelerator = "kvm"                       # Enable KVM hardware acceleration
+
+        args = [
+          "-m", "2048",                               # Memory: 2GB
+          "-smp", "cpus=2",                           # CPU: 2 cores
+          "-drive", "file=/dev/libvirt_vg/ubuntu-vm,format=qcow2", # Use LVM volume
+          "-cdrom", "/tmp/ubuntu.iso",                # Boot ISO for Ubuntu
+          "-boot", "d",                               # Boot from CDROM
+          "-enable-kvm"                               # Enable KVM acceleration
+        ]
+      }
+
+      resources {
+        cpu    = 500   # CPU MHz
+        memory = 2048  # Memory in MB
+      }
+
+      artifact {
+        source      = "http://localhost:8080/ubuntu-20.04.6-live-server-amd64.iso"
+        destination = "/tmp/ubuntu.iso"
+      }
+    }
+  }
+}
+
+
+_____________________
+
+job "vm01" {
+  datacenters = ["dc1"]
+  type = "service"
+
+  group "vm" {
+    count = 1
+
+    task "qemu-vm" {
+      driver = "qemu"
+
+      config {
+        image_path  = "/dev/libvirt_vg/vm01" # Use the LVM logical volume as the disk
+        accelerator = "kvm"                       # Enable KVM hardware acceleration
+
+        args = [
+          "-m", "2048",                            # Memory: 2GB
+          "-smp", "cpus=2",                        # CPU: 2 cores
+          "-drive", "file=/dev/libvirt_vg/vm01,format=qcow2,cache=none", # Use LVM volume
+          "-enable-kvm"                            # Enable KVM acceleration
+        ]
+      }
+
+      resources {
+        cpu    = 500   # CPU MHz
+        memory = 2048  # Memory in MB
+      }
+
+      # Artifact is no longer needed as we are not using an ISO
+    }
+
+    task "clone-qcow2" {
+      driver = "exec"
+
+      config {
+        command = "/bin/bash"
+        args = [
+          "-c",
+          "qemu-img create -f qcow2 -o backing_file=/var/lib/libvirt/images/Debian11-x86_64-Latest.qcow2 /dev/libvirt_vg/vm01"
+        ]
+      }
+
+      resources {
+        cpu    = 100
+        memory = 128
+      }
+    }
+  }
+}
+
+
+___________________
+
+
+job "vm" {
+  datacenters = ["dc1"]
+  type = "service"
+
+  group "vm" {
+    count = 1
+
+    task "qemu-vm" {
+      driver = "qemu"
+
+      config {
+        image_path  = "/var/lib/libvirt/images/Debian11-x86_64-Latest.qcow2" # Path to your QCOW2 image
+        accelerator = "kvm"  # Enable KVM hardware acceleration
+        args = [
+          "-m", "2048",  # Memory: 2GB
+          "-smp", "cpus=2",  # CPU: 2 cores
+          "-drive", "file=/data/vm01.qcow2,format=qcow2",  # Virtual hard disk
+          "-netdev", "user,id=net0,hostfwd=tcp::2222-:22",  # Network forwarding (SSH)
+          "-device", "e1000,netdev=net0",  # Network device
+          "-enable-kvm",  # Enable KVM acceleration
+          "-nographic"  # Run without graphical output
+        ]
+      }
+
+      resources {
+        cpu    = 500   # CPU MHz
+        memory = 2048  # Memory in MB
+      }
+    }
+  }
+}

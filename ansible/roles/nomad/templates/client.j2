@@ -1,0 +1,12 @@
+log_level = "DEBUG"
+data_dir = "/nomad-client-data"
+name = "{{ inventory_hostname }}"
+
+client {
+  enabled = true
+  servers = ["10.8.36.28:4647"]
+}
+
+ports {
+  http = 5656
+}

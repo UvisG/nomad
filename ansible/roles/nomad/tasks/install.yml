@@ -1,0 +1,39 @@
+---
+- name: Update apt cache
+  apt:
+    update_cache: yes
+    cache_valid_time: 3600
+
+- name: Install required packages (wget, gpg, coreutils)
+  apt:
+    name:
+      - wget
+      - gpg
+      - coreutils
+    state: present
+
+- name: Add HashiCorp GPG key
+  apt_key:
+    url: https://apt.releases.hashicorp.com/gpg
+    state: present
+    keyring: /usr/share/keyrings/hashicorp-archive-keyring.gpg
+  environment :
+    http_proxy : 'http://fra1-proxy1-pr:3128'
+    https_proxy : 'http://fra1-proxy1-pr:3128'
+
+- name: Add the official HashiCorp Linux repository
+  copy:
+    content: "deb [signed-by=/usr/share/keyrings/hashicorp-archive-keyring.gpg] https://apt.releases.hashicorp.com {{ ansible_distribution_release }} main\n"
+    dest: /etc/apt/sources.list.d/hashicorp.list
+    owner: root
+    group: root
+    mode: '0644'
+
+- name: Update apt cache after adding HashiCorp repo
+  apt:
+    update_cache: yes
+
+- name: Install Nomad
+  apt:
+    name: nomad
+    state: present

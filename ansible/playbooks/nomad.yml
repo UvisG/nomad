@@ -1,0 +1,5 @@
+- hosts: nomad
+  become: true
+  gather_facts: true
+  roles:
+    - nomad
